@@ -237,9 +237,9 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void blake2fTest1() {
+    public void blake2fTest1() throws VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP153)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP_176)).thenReturn(true);
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
@@ -270,7 +270,7 @@ public class PrecompiledContractTest {
     @Test
     public void blake2fTestOnNotActivatedHardFork() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP153)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP_176)).thenReturn(false);
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
