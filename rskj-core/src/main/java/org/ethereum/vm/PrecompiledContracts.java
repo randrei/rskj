@@ -472,6 +472,9 @@ public class PrecompiledContracts {
         private static byte BLAKE2F_FINAL_BLOCK_BYTES = 1;
         private static byte BLAKE2F_NON_FINAL_BLOCK_BYTES = 0;
 
+        public static final String BLAKE2F_ERROR_INPUT_LENGHT = "input length for BLAKE2 F precompile should be exactly 213 bytes";
+        public static final String BLAKE2F_ERROR_FINAL_BLOCK_BYTES = "incorrect final block indicator flag";
+
         @Override
         public long getGasForData(byte[] data) {
             if (data.length != BLAKE2F_INPUT_LEN) {
@@ -488,10 +491,10 @@ public class PrecompiledContracts {
         @Override
         public byte[] execute(byte[] data) {
             if (data.length != BLAKE2F_INPUT_LEN) {
-                throw new IllegalArgumentException("input length for BLAKE2 F precompile should be exactly 213 bytes");
+                throw new IllegalArgumentException(BLAKE2F_ERROR_INPUT_LENGHT);
             }
             if (data[212] != BLAKE2F_NON_FINAL_BLOCK_BYTES && data[212] != BLAKE2F_FINAL_BLOCK_BYTES) {
-                throw new IllegalArgumentException("incorrect final block indicator flag");
+                throw new IllegalArgumentException(BLAKE2F_ERROR_FINAL_BLOCK_BYTES);
             }
 
             ByteBuffer bb = ByteBuffer.wrap(data);
