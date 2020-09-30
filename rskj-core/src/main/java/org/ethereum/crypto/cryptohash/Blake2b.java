@@ -1,7 +1,8 @@
 package org.ethereum.crypto.cryptohash;
 
 /**
- * Created by bakaking on 25/10/2019.
+ * This is pretty similar to besu's implementation
+ * https://github.com/hyperledger/besu/blob/master/crypto/src/main/java/org/hyperledger/besu/crypto/Blake2bfMessageDigest.java
  */
 public class Blake2b {
 
