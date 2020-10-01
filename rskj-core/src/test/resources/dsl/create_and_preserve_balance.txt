@@ -21,24 +21,6 @@ block_build b01
 block_connect b01
 assert_best b01
 
-block_build b02
-    parent b01
-    build
-block_connect b02
-assert_best b02
-
-block_build b03
-    parent b02
-    build
-block_connect b03
-assert_best b03
-
-block_build b04
-    parent b03
-    build
-block_connect b04
-assert_best b04
-
 # Create empty.sol contract
 
 transaction_build tx02
@@ -49,13 +31,13 @@ transaction_build tx02
     gas 1200000
     build
 
-# build block #5 with rskip174 activated
-block_build b05
-    parent b04
+# build block #2 with rskip174 activated
+block_build b02
+    parent b01
     transactions tx02
     build
-block_connect b05
-assert_best b05
+block_connect b02
+assert_best b02
 
 # Assert contract balance
 assert_balance 6252703f5ba322ec64d3ac45e56241b7d9e481ad 100
