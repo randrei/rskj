@@ -20,7 +20,6 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
-import javafx.util.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -316,21 +315,22 @@ public class PrecompiledContractTest {
     }
 
     private void internalBlake2fTestVector(String data, String expectedResult, long expectedGasCost) throws VMException {
-        Pair<byte[], Long> execution = callBlake2(data);
+        PrecompiledContract contract = blake2();
+        byte[] result = contract.execute(Hex.decode(data));
 
-        assertEquals(expectedResult, Hex.toHexString(execution.getKey()));
-        assertEquals(expectedGasCost, execution.getValue().longValue());
+        assertEquals(expectedResult, Hex.toHexString(result));
+        assertEquals(expectedGasCost, contract.getGasForData(Hex.decode(data)));
     }
 
     private void internalFailBlake2fTestVector(String data, String expectedError) {
         try {
-            callBlake2(data);
+            blake2().execute(Hex.decode(data));
         } catch (IllegalArgumentException | VMException e) {
             assertEquals(expectedError, e.getMessage());
         }
     }
 
-    private Pair<byte[], Long> callBlake2(String data) throws VMException {
+    private PrecompiledContract blake2() throws VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -338,12 +338,7 @@ public class PrecompiledContractTest {
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
         assertNotNull(contract);
 
-        byte[] dataBytes = Hex.decode(data);
-
-        byte[] result = contract.execute(dataBytes);
-        long gasCost = contract.getGasForData(dataBytes);
-
-        return new Pair(result, gasCost);
+        return contract;
     }
 
     @Test
