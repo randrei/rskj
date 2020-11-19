@@ -125,7 +125,7 @@ public class PrecompiledContracts {
             new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP176)
+            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -193,7 +193,7 @@ public class PrecompiledContracts {
             return new BN128Pairing();
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP176) && address.equals(BLAKE2F_ADDR_DW)) {
+        if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
             return new Blake2F();
         }
 
