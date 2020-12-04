@@ -22,7 +22,6 @@ import java.util.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @Ignore
 public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
@@ -42,7 +41,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
         public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
-            super(bridgeConstants.getBtcParams(), repository, null, contractAddress);
+            super(bridgeConstants.getBtcParams(), repository, null, contractAddress, null);
         }
 
         @Override

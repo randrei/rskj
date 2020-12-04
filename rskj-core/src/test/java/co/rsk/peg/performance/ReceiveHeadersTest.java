@@ -34,7 +34,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -126,7 +125,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), (Repository) environment.getBenchmarkedRepository(), new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
+                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), (Repository) environment.getBenchmarkedRepository(), new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR,
+                        null);
                     Sha256Hash bestBlockHash = null;
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
