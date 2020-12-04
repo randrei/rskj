@@ -580,6 +580,14 @@ public class BridgeStorageProvider {
         coinbaseInformationMap.put(blockHash, data);
     }
 
+    public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
+
+    }
+
+    public Optional<Sha256Hash> getBtcBestBlockHashByHeight(int height) {
+        return Optional.empty();
+    }
+
     private void saveCoinbaseInformations() {
         if (!activations.isActive(RSKIP143)) {
             return;
