@@ -40,6 +40,6 @@ public interface BtcBlockStoreWithCache extends BtcBlockStore {
         BtcBlockStoreWithCache newInstance(
             Repository track,
             BridgeStorageProvider bridgeStorageProvider
-        );
+        ) throws BlockStoreException;
     }
 }

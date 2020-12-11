@@ -95,19 +95,14 @@ public class BridgeStorageProvider {
     private boolean shouldSavePendingFederation = false;
 
     private ABICallElection federationElection;
-
     private LockWhitelist lockWhitelist;
-
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
-
     private Coin lockingCap;
-
     private HashMap<DataWord, Optional<Integer>> storageVersion;
-
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
-
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
+    private Map<Integer, Sha256Hash> btcBlocksIndex;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
@@ -518,7 +513,6 @@ public class BridgeStorageProvider {
         safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
-
     public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
         if (feePerKbElection != null) {
             return feePerKbElection;
@@ -580,12 +574,43 @@ public class BridgeStorageProvider {
         coinbaseInformationMap.put(blockHash, data);
     }
 
-    public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
+    public Optional<Sha256Hash> getBtcBestBlockHashByHeight(int height) {
+        // TODO Check for RSKIP activation
+        // if (!activations.isActive(RSKIP...)) {
+        //     return Optional.empty();
+        // }
 
+        DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
+        Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
+        // TODO Check the return value when the searched item is not in storage
+        if (blockHash != null) {
+            return Optional.of(blockHash);
+        }
+
+        return Optional.empty();
     }
 
-    public Optional<Sha256Hash> getBtcBestBlockHashByHeight(int height) {
-        return Optional.empty();
+    public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
+        // TODO Check for RSKIP activation
+        // if (!activations.isActive(RSKIP...)) {
+        //     return;
+        // }
+
+        if (btcBlocksIndex == null) {
+            btcBlocksIndex = new HashMap<>();
+        }
+
+        btcBlocksIndex.put(height, blockHash);
+    }
+
+    private void saveBtcBlocksIndex() {
+        if (btcBlocksIndex != null) {
+            btcBlocksIndex.forEach((Integer height, Sha256Hash blockHash) -> {
+                DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
+                safeSaveToRepository(storageKey, blockHash, BridgeSerializationUtils::serializeSha256Hash);
+            });
+            // TODO Should we clear btcBlocksIndex map to avoid storing the same values again if this method is called twice?
+        }
     }
 
     private void saveCoinbaseInformations() {
@@ -627,6 +652,8 @@ public class BridgeStorageProvider {
         saveHeightBtcTxHashAlreadyProcessed();
 
         saveCoinbaseInformations();
+
+        saveBtcBlocksIndex();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -635,6 +662,10 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForCoinbaseInformation(Sha256Hash btcTxHash) {
         return DataWord.fromLongString("coinbaseInformation-" + btcTxHash.toString());
+    }
+
+    private DataWord getStorageKeyForBtcBlockIndex(Integer height) {
+        return DataWord.fromLongString("btcBlockHeight-" + height);
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

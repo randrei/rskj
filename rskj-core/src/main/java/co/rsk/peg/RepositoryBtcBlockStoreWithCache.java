@@ -54,7 +54,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         Map<Sha256Hash, StoredBlock> cacheBlocks,
         RskAddress contractAddress,
         BridgeStorageProvider bridgeStorageProvider
-    ) {
+    ) throws BlockStoreException {
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
@@ -96,12 +96,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
-    public synchronized void setChainHead(StoredBlock newChainHead) {
+    public synchronized void setChainHead(StoredBlock newChainHead) throws BlockStoreException {
         byte[] ba = storedBlockToByteArray(newChainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
         if(cacheBlocks != null) {
             populateCache(newChainHead);
         }
+        setMainChainBlock(newChainHead.getHeight(), newChainHead.getHeader().getHash());
     }
 
     @Override
@@ -114,7 +115,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
-    public void setMainChainBlock(int height, Sha256Hash blockHash) throws BlockStoreException {
+    public void setMainChainBlock(int height, Sha256Hash blockHash) {
         bridgeStorageProvider.setBtcBestBlockHashByHeight(height, blockHash);
     }
 
@@ -226,7 +227,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         return StoredBlock.deserializeCompact(btcNetworkParams, byteBuffer);
     }
 
-    private void checkIfInitialized() {
+    private void checkIfInitialized() throws BlockStoreException {
         if (getChainHead() == null) {
             BtcBlock genesisHeader = this.btcNetworkParams.getGenesisBlock().cloneAsHeader();
             StoredBlock storedGenesis = new StoredBlock(genesisHeader, genesisHeader.getWork(), 0);
@@ -250,10 +251,9 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         public BtcBlockStoreWithCache newInstance(
             Repository track,
             BridgeStorageProvider bridgeStorageProvider
-        ) {
+        ) throws BlockStoreException {
             return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress,
                 null);
         }
     }
-
 }
