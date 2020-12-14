@@ -54,7 +54,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         Map<Sha256Hash, StoredBlock> cacheBlocks,
         RskAddress contractAddress,
         BridgeStorageProvider bridgeStorageProvider
-    ) throws BlockStoreException {
+    ) {
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
@@ -96,7 +96,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
-    public synchronized void setChainHead(StoredBlock newChainHead) throws BlockStoreException {
+    public synchronized void setChainHead(StoredBlock newChainHead) {
         byte[] ba = storedBlockToByteArray(newChainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
         if(cacheBlocks != null) {
@@ -227,7 +227,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         return StoredBlock.deserializeCompact(btcNetworkParams, byteBuffer);
     }
 
-    private void checkIfInitialized() throws BlockStoreException {
+    private void checkIfInitialized() {
         if (getChainHead() == null) {
             BtcBlock genesisHeader = this.btcNetworkParams.getGenesisBlock().cloneAsHeader();
             StoredBlock storedGenesis = new StoredBlock(genesisHeader, genesisHeader.getWork(), 0);
@@ -252,8 +252,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             Repository track,
             BridgeStorageProvider bridgeStorageProvider
         ) throws BlockStoreException {
-            return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress,
-                null);
+            return new RepositoryBtcBlockStoreWithCache(
+                btcNetworkParams,
+                track,
+                cacheBlocks,
+                contractAddress,
+                bridgeStorageProvider
+            );
         }
     }
 }

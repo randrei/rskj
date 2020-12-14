@@ -2741,7 +2741,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getLockWhitelistMethods() throws IOException {
+    public void getLockWhitelistMethods() throws IOException, BlockStoreException {
         NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
@@ -2766,7 +2766,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_ok() throws IOException {
+    public void addLockWhitelistAddress_ok() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -2787,7 +2787,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_addFails() throws IOException {
+    public void addLockWhitelistAddress_addFails() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -2807,7 +2807,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_notAuthorized() throws IOException {
+    public void addLockWhitelistAddress_notAuthorized() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -2820,7 +2820,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_invalidAddress() throws IOException {
+    public void addLockWhitelistAddress_invalidAddress() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3000,7 +3000,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_ok() throws IOException {
+    public void removeLockWhitelistAddress_ok() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3021,7 +3021,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_removeFails() throws IOException {
+    public void removeLockWhitelistAddress_removeFails() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3042,7 +3042,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_notAuthorized() throws IOException {
+    public void removeLockWhitelistAddress_notAuthorized() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3055,7 +3055,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_invalidAddress() throws IOException {
+    public void removeLockWhitelistAddress_invalidAddress() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3710,7 +3710,8 @@ public class BridgeSupportTestPowerMock {
         );
     }
 
-    private BridgeSupport getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(LockWhitelist mockedWhitelist, BtcBlockStoreWithCache btcBlockStore) {
+    private BridgeSupport getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(LockWhitelist mockedWhitelist, BtcBlockStoreWithCache btcBlockStore)
+        throws BlockStoreException {
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
         when(providerMock.getLockWhitelist()).thenReturn(mockedWhitelist);
 
@@ -3720,7 +3721,8 @@ public class BridgeSupportTestPowerMock {
         return getBridgeSupport(providerMock, null, mockFactory);
     }
 
-    private BridgeSupport getBridgeSupportWithMocksForWhitelistTests(LockWhitelist mockedWhitelist) {
+    private BridgeSupport getBridgeSupportWithMocksForWhitelistTests(LockWhitelist mockedWhitelist)
+        throws BlockStoreException {
         return getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist, null);
     }
 

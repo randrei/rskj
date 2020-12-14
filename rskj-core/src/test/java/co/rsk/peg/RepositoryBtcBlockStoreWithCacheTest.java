@@ -46,13 +46,14 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
     NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
 
-    private BtcBlockStoreWithCache createBlockStore() {
+    private BtcBlockStoreWithCache createBlockStore() throws BlockStoreException {
         Repository repository =  createRepository();
         RepositoryBtcBlockStoreWithCache.Factory factory = createBlockStoreFactory();
         return createBlockStoreWithTrack(factory, repository.startTracking());
     }
 
-    private BtcBlockStoreWithCache createBlockStoreWithTrack(RepositoryBtcBlockStoreWithCache.Factory factory, Repository track) {
+    private BtcBlockStoreWithCache createBlockStoreWithTrack(RepositoryBtcBlockStoreWithCache.Factory factory, Repository track)
+        throws BlockStoreException {
         return factory.newInstance(track, null);
     }
 
@@ -72,7 +73,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     @Test
-    public void getParams_Test() {
+    public void getParams_Test() throws BlockStoreException {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
 
         assertEquals(networkParameters, btcBlockStore.getParams());

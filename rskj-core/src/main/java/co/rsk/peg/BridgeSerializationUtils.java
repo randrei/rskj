@@ -748,7 +748,7 @@ public class BridgeSerializationUtils {
     }
 
     public static Sha256Hash deserializeSha256Hash(byte[] data) {
-        return Sha256Hash.wrap(data);
+        return Sha256Hash.wrap(RLP.decodeBigInteger(data, 0).toByteArray());
     }
 
     // An ABI call spec is serialized as:

@@ -575,10 +575,9 @@ public class BridgeStorageProvider {
     }
 
     public Optional<Sha256Hash> getBtcBestBlockHashByHeight(int height) {
-        // TODO Check for RSKIP activation
-        // if (!activations.isActive(RSKIP...)) {
-        //     return Optional.empty();
-        // }
+         if (!activations.isActive(RSKIP_BTC_INDEX)) {
+             return Optional.empty();
+         }
 
         DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
         Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
@@ -591,10 +590,9 @@ public class BridgeStorageProvider {
     }
 
     public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
-        // TODO Check for RSKIP activation
-        // if (!activations.isActive(RSKIP...)) {
-        //     return;
-        // }
+         if (!activations.isActive(RSKIP_BTC_INDEX)) {
+             return;
+         }
 
         if (btcBlocksIndex == null) {
             btcBlocksIndex = new HashMap<>();
