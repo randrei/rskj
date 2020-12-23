@@ -56,6 +56,7 @@ public enum ConsensusRule {
     RSKIP172("rskip172"),
     RSKIP174("rskip174"),
     RSKIP180("rskip180"),
+    RSKIP181("rskip181"), //Peg-in rejection events
     RSKIP191("rskip191"),
     RSKIPUMM("rskipUMM");
 
