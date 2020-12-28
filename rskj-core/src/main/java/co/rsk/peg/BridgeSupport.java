@@ -2219,7 +2219,7 @@ public class BridgeSupport {
         return wallet;
     }
 
-    protected Keccak256 getFastBridgeDerivationHash(
+    public static Keccak256 getFastBridgeDerivationHash(
         Keccak256 derivationArgumentsHash,
         Address userRefundAddress,
         Address lpBtcAddress,
