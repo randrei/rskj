@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.core.RskAddress;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
@@ -37,6 +38,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.BeforeClass;
 
 import java.math.BigInteger;
@@ -78,6 +80,27 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
         public static TxBuilder getZeroValueValueTxBuilderFromFedMember() {
             return Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey());
+        }
+
+        public static TxBuilder getTxBuilderWithInternalTransaction(RskAddress sender){
+            return (int index) -> {
+                TxBuilder txBuilder = Helper.getZeroValueTxBuilder(new ECKey());
+                Transaction tx = txBuilder.build(index);
+                InternalTransaction internalTx = new InternalTransaction(
+                        tx.getHash().getBytes(),
+                        0,
+                        0,
+                        null,
+                        null,
+                        null,
+                        sender.getBytes(),
+                        null,
+                        null,
+                        null,
+                        null
+                );
+                return internalTx;
+            };
         }
 
         public static BtcBlock generateAndAddBlocks(BtcBlockChain btcBlockChain, int blocksToGenerate) {
@@ -197,9 +220,9 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
                 Repository repository = benchmarkerTrack.startTracking();
                 BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
-                BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
-                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStore);
-                repository.commit();
+                BridgeStorageProvider storageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
+                storageInitializer.initialize(storageProvider, repository, executionIndex, btcBlockStore);
+                repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(Coin.COIN.multiply(21_000_000L)));
 
                 try {
                     storageProvider.save();
@@ -207,6 +230,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                     throw new RuntimeException("Error trying to save the storage after initialization", e);
                 }
 
+                repository.commit();
                 benchmarkerTrack.commit();
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, benchmarkerTrack.getTrie());
