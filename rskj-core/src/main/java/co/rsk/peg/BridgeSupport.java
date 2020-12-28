@@ -37,6 +37,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -488,8 +489,11 @@ public class BridgeSupport {
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
 
+        Coin value = rskTx.getValue().toBitcoin();
+        final String sender = rskTx.getSender().toHexString();
         //as we can't send btc from contracts we want to send them back to the sender
         if (BridgeUtils.isContractTx(rskTx)) {
+            eventLogger.logReleaseBtcRequestRejected(sender, value, RejectedPegoutReason.LOW_AMOUNT);
             logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
@@ -497,12 +501,13 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
         if (addResult) {
+            eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress.getHash160(), value);
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
         } else {
+            eventLogger.logReleaseBtcRequestRejected(sender, value, RejectedPegoutReason.LOW_AMOUNT);
             logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
         }
     }
