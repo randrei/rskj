@@ -96,7 +96,6 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -119,26 +118,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 public class BridgeSupportTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -3483,7 +3462,7 @@ public class BridgeSupportTest {
         BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
             TxSenderAddressType.P2PKH,
             btcAddressFromBtcLockSender,
-            rskAddress
+            rskDerivedAddress
         );
         PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(
             rskDestinationAddress,
@@ -3507,7 +3486,7 @@ public class BridgeSupportTest {
         // Assert
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(amountToLock);
 
-        Assert.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
+        Assert.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskDerivedAddress));
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskDestinationAddress));
         Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
@@ -3530,7 +3509,7 @@ public class BridgeSupportTest {
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         Address btcAddressFromBtcLockSender = srcKey1.toAddress(btcParams);
-        RskAddress rskAddress = new RskAddress(key.getAddress());
+        RskAddress rskDerivedAddress = new RskAddress(key.getAddress());
         RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
 
         Coin amountToLock = Coin.COIN.multiply(10);
@@ -3640,6 +3619,7 @@ public class BridgeSupportTest {
 
         Federation federation1 = getFederation(bridgeConstants);
         Repository repository = createRepository();
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
