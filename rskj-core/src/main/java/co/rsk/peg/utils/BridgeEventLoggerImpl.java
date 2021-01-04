@@ -223,7 +223,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(amount.getValue(), reason);
+        byte[] encodedData = event.encodeEventData(amount.getValue(), reason.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
