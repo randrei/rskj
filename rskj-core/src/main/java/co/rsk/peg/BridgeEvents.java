@@ -7,14 +7,14 @@ public enum BridgeEvents {
 
     LOCK_BTC("lock_btc",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "receiver", SolidityType.getType(SolidityType.ADDRESS)),
+                    new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "btcTxHash", SolidityType.getType("bytes32")),
                     new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType(SolidityType.STRING)),
-                    new CallTransaction.Param(false, "amount", SolidityType.getType(SolidityType.INT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT))
             }),
     UPDATE_COLLECTIONS("update_collections",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(false, "sender", SolidityType.getType(SolidityType.ADDRESS))
+                    new CallTransaction.Param(false, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS))
             }
     ),
     ADD_SIGNATURE("add_signature",
@@ -43,21 +43,21 @@ public enum BridgeEvents {
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "rskTxHash", SolidityType.getType("bytes32")),
                     new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
-                    new CallTransaction.Param(false, "amount", SolidityType.getType(SolidityType.UINT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT))
             }
     ),
     RELEASE_REQUEST_RECEIVED("release_request_received",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "sender", SolidityType.getType(SolidityType.ADDRESS)),
+                    new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.BYTES)),
-                    new CallTransaction.Param(false, "amount", SolidityType.getType(SolidityType.UINT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT))
             }
     ),
     RELEASE_REQUEST_REJECTED("release_request_rejected",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "sender", SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, "amount", SolidityType.getType(SolidityType.UINT)),
-                    new CallTransaction.Param(false, "reason", SolidityType.getType(SolidityType.INT))
+                    new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT)),
+                    new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT))
             }
     );
 
@@ -71,5 +71,12 @@ public enum BridgeEvents {
 
     public CallTransaction.Function getEvent() {
         return CallTransaction.Function.fromEventSignature(eventName, params);
+    }
+
+    private static class Fields {
+        private static final String RECEIVER = "receiver";
+        private static final String SENDER = "sender";
+        private static final String AMOUNT = "amount";
+        private static final String REASON = "reason";
     }
 }
