@@ -494,12 +494,13 @@ public class BridgeSupport {
         final String senderAddressStr = senderAddress.toHexString();
         //as we can't send btc from contracts we want to send them back to the senderAddressStr
         if (BridgeUtils.isContractTx(rskTx)) {
-
+            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 refundAndEmitEvent(value, senderAddress, senderAddressStr, RejectedPegoutReason.CALLER_CONTRACT);
+                return;
+            } else {
+                throw new Program.OutOfGasException("Contract calling releaseBTC");
             }
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
-            throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
 
         Context.propagate(btcContext);
@@ -523,6 +524,7 @@ public class BridgeSupport {
     }
 
     private void refundAndEmitEvent(Coin value, RskAddress senderAddress, String senderAddressStr, RejectedPegoutReason reason) {
+        logger.trace("Executing a refund of {} to {}. Reason: {}", value, senderAddressStr, reason);
         rskRepository.transfer(
                 PrecompiledContracts.BRIDGE_ADDR,
                 senderAddress,

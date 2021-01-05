@@ -31,4 +31,9 @@ public enum RejectedPegoutReason {
     public int getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return this.name() + '(' + this.value + ')';
+    }
 }

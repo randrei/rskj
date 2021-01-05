@@ -9,6 +9,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -16,27 +17,27 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
+import org.ethereum.vm.program.InternalTransaction;
+import org.ethereum.vm.program.Program;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -181,7 +182,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
-        assertTopic(logInfo, 1, BridgeEvents.RELEASE_REQUESTED.getEvent().encodeEventTopics(releaseTx.getHash().getBytes(), entry.getTransaction().getHash().getBytes()));
+        assertEvent(logInfo, 1, BridgeEvents.RELEASE_REQUESTED.getEvent(), new Object[]{releaseTx.getHash().getBytes(), entry.getTransaction().getHash().getBytes()}, new Object[]{Coin.COIN.value});
     }
 
     @Test
@@ -207,9 +208,9 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(3, logInfo.size());
 
-        assertTopic(logInfo, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent().encodeEventTopics(rskTx.getSender().toHexString()));
-        assertTopic(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent().encodeEventTopics());
-        assertTopic(logInfo, 2, BridgeEvents.RELEASE_REQUESTED.getEvent().encodeEventTopics(releaseTx.getHash().getBytes(), entry.getTransaction().getHash().getBytes()));
+        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{getBtcDestinationAddress(releaseTx), Coin.COIN.value});
+        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+        assertEvent(logInfo, 2, BridgeEvents.RELEASE_REQUESTED.getEvent(), new Object[]{releaseTx.getHash().getBytes(), entry.getTransaction().getHash().getBytes()}, new Object[]{Coin.COIN.value});
     }
 
     @Test
@@ -236,11 +237,11 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(1, logInfo.size());
 
-        assertTopic(logInfo, 0, BridgeEvents.UPDATE_COLLECTIONS.getEvent().encodeEventTopics());
+        assertEvent(logInfo, 0, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
     }
 
     @Test
-    public void handmade_release_after_rskip_146_185_rejected() throws IOException {
+    public void handmade_release_after_rskip_146_185_rejected_lowAmount() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
@@ -267,18 +268,76 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(2, logInfo.size());
 
-        assertTopic(logInfo, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent().encodeEventTopics(rskTx.getSender().toHexString()));
-        assertTopic(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent().encodeEventTopics());
+        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{Coin.ZERO.value, RejectedPegoutReason.LOW_AMOUNT.getValue()});
+        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+    }
+
+
+    @Test
+    public void handmade_release_after_rskip_146_185_rejected_contractCaller() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
+
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo);
+        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+
+        releaseTx = buildReleaseRskTx_Contract(Coin.COIN);
+        bridgeSupport.releaseBtc(releaseTx);
+
+        // Create Contract transaction
+        Transaction rskTx = buildUpdateTx();
+        rskTx.sign(SENDER.getPrivKeyBytes());
+        bridgeSupport.updateCollections(rskTx);
+
+        verify(repository, times(1)).transfer(
+                argThat((a) -> a.equals(PrecompiledContracts.BRIDGE_ADDR)),
+                argThat((a) -> a.equals(new RskAddress(SENDER.getAddress()))),
+                argThat((a) -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.COIN)))
+        );
+
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(2, logInfo.size());
+
+        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{Coin.COIN.value, RejectedPegoutReason.CALLER_CONTRACT.getValue()});
+        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+    }
+
+    @Test
+    public void handmade_release_after_rskip_146_rejected_contractCaller() throws IOException {
+
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo);
+        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+
+        releaseTx = buildReleaseRskTx_Contract(Coin.COIN);
+        try {
+            bridgeSupport.releaseBtc(releaseTx);
+            fail();
+        }catch (Program.OutOfGasException e) {
+            assertTrue(e.getMessage().contains("Contract calling releaseBTC"));
+        }
     }
 
     /**********************************
      *  -------     UTILS     ------- *
-     **********************************/
+     *********************************/
 
-    private static void assertTopic(List<LogInfo> logInfo, int topicsIndex, byte[][] topics) {
-        assertEquals(LogInfo.byteArrayToList(
-                topics),
-                logInfo.get(topicsIndex).getTopics());
+    private byte[] getBtcDestinationAddress(Transaction rskTx) {
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        return BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams).getHash160();
+    }
+
+    private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
+        final LogInfo log = logs.get(index);
+        assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
+        assertArrayEquals(event.encodeEventData(params), log.getData());
     }
 
     private UTXO buildUTXO() {
@@ -302,6 +361,24 @@ public class BridgeSupportReleaseBtcTest {
                 .build();
         releaseTx.sign(SENDER.getPrivKeyBytes());
         return releaseTx;
+    }
+
+    private Transaction buildReleaseRskTx_Contract(Coin coin) {
+        Transaction releaseTx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger())
+                .build();
+        releaseTx.sign(SENDER.getPrivKeyBytes());
+        return new InternalTransaction(releaseTx.getHash().getBytes(), 400, 0, NONCE.toByteArray(),
+                DataWord.valueOf(GAS_PRICE.intValue()), DataWord.valueOf(GAS_LIMIT.intValue()), SENDER.getAddress(),
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(), co.rsk.core.Coin.fromBitcoin(Coin.COIN).getBytes(),
+                Hex.decode(DATA), "");
     }
 
     private Transaction buildUpdateTx() {
