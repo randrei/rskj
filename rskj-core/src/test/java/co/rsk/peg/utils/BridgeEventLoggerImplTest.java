@@ -51,6 +51,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -541,9 +543,57 @@ public class BridgeEventLoggerImplTest {
     }
 
 
+    @Test
+    public void testLogReleaseBtcRequestReceived() {
+        String sender = "0x00000000000000000000000000000000000000";
+        byte[] btcDestinationAddress = "1234".getBytes();
+        Coin amount = Coin.COIN;
+
+        eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+    }
+
+
+    @Test
+    public void testLogReleaseBtcRequestRejected() {
+        String sender = "0x00000000000000000000000000000000000000";
+        Coin amount = Coin.COIN;
+        RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
+
+        eventLogger.logReleaseBtcRequestRejected(sender, amount, reason);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{sender}, new Object[]{amount.value, reason.getValue()});
+    }
+
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
+
+    private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
+        final LogInfo log = logs.get(index);
+        assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
+        assertArrayEquals(event.encodeEventData(params), log.getData());
+    }
+
+    private void assertTopics(int topics, List<LogInfo> logs) {
+        assertEquals(topics, logs.get(0).getTopics().size());
+    }
+
+    private void commonAssertLogs(List<LogInfo> logs) {
+        assertEquals(1, logs.size());
+        LogInfo entry = logs.get(0);
+
+        // Assert address that made the log
+        assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+        assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), entry.getAddress());
+    }
+
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
                 .map(BtcECKey::getPubKey)
