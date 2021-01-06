@@ -489,12 +489,12 @@ public class PrecompiledContracts {
         }
 
         @Override
-        public byte[] execute(byte[] data) {
+        public byte[] execute(byte[] data) throws VMException {
             if (data.length != BLAKE2F_INPUT_LEN) {
-                throw new IllegalArgumentException(BLAKE2F_ERROR_INPUT_LENGHT);
+                throw new VMException(BLAKE2F_ERROR_INPUT_LENGHT);
             }
             if (data[212] != BLAKE2F_NON_FINAL_BLOCK_BYTES && data[212] != BLAKE2F_FINAL_BLOCK_BYTES) {
-                throw new IllegalArgumentException(BLAKE2F_ERROR_FINAL_BLOCK_BYTES);
+                throw new VMException(BLAKE2F_ERROR_FINAL_BLOCK_BYTES);
             }
 
             ByteBuffer bb = ByteBuffer.wrap(data);
