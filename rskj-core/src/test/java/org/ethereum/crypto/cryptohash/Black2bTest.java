@@ -35,7 +35,7 @@ public class Black2bTest {
                 0x2D79AB2A39C5877DL, 0x95CC3345DED552C2L,
                 0x5A92F1DBA88AD318L, 0x239900D4ED8623B9L};
 
-        Blake2b.F(h, m, c, f, rounds);
+        Blake2b.functionF(h, m, c, f, rounds);
         assertArrayEquals(expected, h);
     }
 }

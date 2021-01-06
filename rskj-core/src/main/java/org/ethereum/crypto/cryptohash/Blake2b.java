@@ -6,10 +6,6 @@ package org.ethereum.crypto.cryptohash;
  */
 public class Blake2b {
 
-    private Blake2b() {
-        throw new IllegalStateException("Utility class");
-    }
-
     /**
      * IV is an initialization vector for BLAKE2b
      */
@@ -36,6 +32,10 @@ public class Blake2b {
             {10, 8, 7, 1, 2, 4, 6, 5, 15, 9, 3, 13, 11, 14, 12, 0},
     };
 
+    private Blake2b() {
+        throw new IllegalStateException("Utility class");
+    }
+
     /**
      * F is a compression function for BLAKE2b. The state vector
      * provided as the first parameter is modified by the function.
@@ -46,7 +46,7 @@ public class Blake2b {
      * @param f      final block indicator flag
      * @param rounds number of rounds
      */
-    public static void F(long[] h, long[] m, long[] c, boolean f, long rounds) {
+    public static void functionF(long[] h, long[] m, long[] c, boolean f, long rounds) {
 
         long t0 = c[0];
         long t1 = c[1];

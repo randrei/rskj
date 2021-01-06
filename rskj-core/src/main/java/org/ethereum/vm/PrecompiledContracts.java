@@ -468,9 +468,9 @@ public class PrecompiledContracts {
 
     public static class Blake2F extends PrecompiledContract {
 
-        private static int BLAKE2F_INPUT_LEN = 213;
-        private static byte BLAKE2F_FINAL_BLOCK_BYTES = 1;
-        private static byte BLAKE2F_NON_FINAL_BLOCK_BYTES = 0;
+        private static final int BLAKE2F_INPUT_LEN = 213;
+        private static final byte BLAKE2F_FINAL_BLOCK_BYTES = 1;
+        private static final byte BLAKE2F_NON_FINAL_BLOCK_BYTES = 0;
 
         public static final String BLAKE2F_ERROR_INPUT_LENGHT = "input length for BLAKE2 F precompile should be exactly 213 bytes";
         public static final String BLAKE2F_ERROR_FINAL_BLOCK_BYTES = "incorrect final block indicator flag";
@@ -518,7 +518,7 @@ public class PrecompiledContracts {
 
             boolean f = (data[212] == BLAKE2F_FINAL_BLOCK_BYTES);
 
-            Blake2b.F(h, m, t, f, rounds);
+            Blake2b.functionF(h, m, t, f, rounds);
             ByteBuffer output = ByteBuffer.allocate(64);
             output.order(ByteOrder.LITTLE_ENDIAN);
             for (int i = 0; i < 8; i++) {
