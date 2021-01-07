@@ -2138,7 +2138,7 @@ public class BridgeSupport {
     // Make sure the local bitcoin blockstore is instantiated
     private void ensureBtcBlockStore() throws IOException, BlockStoreException {
         if(btcBlockStore == null) {
-            btcBlockStore = btcBlockStoreFactory.newInstance(rskRepository, provider);
+            btcBlockStore = btcBlockStoreFactory.newInstance(rskRepository, provider); // TODO add activations
             NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
 
             if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {

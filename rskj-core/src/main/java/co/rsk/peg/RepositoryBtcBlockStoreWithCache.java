@@ -106,10 +106,12 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
+    // TODO Make return value Optional
     public StoredBlock getInMainchain(int height) throws BlockStoreException {
         Optional<Sha256Hash> bestBlockHash = bridgeStorageProvider.getBtcBestBlockHashByHeight(height);
         if (!bestBlockHash.isPresent()) {
-            throw new BlockStoreException("No block at height " + height);
+            //throw new BlockStoreException("No block at height " + height);
+            return null;
         }
         return get(bestBlockHash.get());
     }
@@ -138,7 +140,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
-        StoredBlock chainHead =  getChainHead();
+        StoredBlock chainHead = getChainHead();
         int depth = chainHead.getHeight() - height;
 
         if (depth < 0) {
@@ -150,8 +152,28 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
                 )
             );
         }
+        //TODO
+        if (iris.isActiveInRsk()) {
+            int blockHeightInBtcIrisActivation = BridgeConstants;
+            int maxBlocksToSearch = 1000; //Will be defined in a constant
+            int limit;
+            if (chainHead - blockHeightInBtcIrisActivation > maxBlocksToSearch) {
+                limit = blockHeightInBtcIrisActivation;
+            } else {
+                limit = chainHead - maxBlocksToSearch;
+            }
 
-        return getInMainchain(height);
+            if (height < limit) {
+                throw exception;
+            }
+        }
+
+        StoredBlock block = getInMainchain(height);
+        if (block == null) {
+            block = getStoredBlockAtMainChainDepth(depth);
+        }
+
+        return block;
     }
 
     @Override
@@ -248,7 +270,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         @Override
-        public BtcBlockStoreWithCache newInstance(
+        public BtcBlockStoreWithCache newInstance( // TODO Receive activations
             Repository track,
             BridgeStorageProvider bridgeStorageProvider
         ) throws BlockStoreException {
