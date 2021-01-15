@@ -56,6 +56,7 @@ public enum ConsensusRule {
     RSKIP174("rskip174"),
     RSKIP179("rskip179"), // BTC-RSK timestamp linking
     RSKIP180("rskip180"),
+    RSKIP186("rskip186"), // Active Federation creation block height registration
     RSKIPUMM("rskipUMM"),
     RSKIP191("rskip191"),
     RSKIP197("rskip197"); //Handle error in Precompile Contracts execution.

@@ -70,6 +70,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
  * @author Oscar Guindzberg
@@ -313,12 +315,14 @@ public class BridgeSupport {
     }
 
     protected TxType getTransactionType(BtcTransaction btcTx) {
-        if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
+        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript();
+
+        if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
             return TxType.PEGIN;
         }
 
-        if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext,
-                bridgeConstants)) {
+        if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), retiredFederationP2SHScript,
+                            btcContext, bridgeConstants)) {
             return TxType.MIGRATION;
         }
 
@@ -564,6 +568,8 @@ public class BridgeSupport {
         processReleaseRequests();
 
         processReleaseTransactions(rskTx);
+
+        updateFederationCreationBlockHeights();
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
@@ -809,6 +815,16 @@ public class BridgeSupport {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
             }
         }
+    }
+
+    private void updateFederationCreationBlockHeights() {
+        if (!activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        Long nextFederationCreationBlockHeight = provider.getNextFederationCreationBlockHeight();
+        provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+        provider.clearNextFederationCreationBlockHeight();
     }
 
     /**
@@ -1493,7 +1509,7 @@ public class BridgeSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederation(boolean dryRun, Keccak256 hash) throws IOException {
+    protected Integer commitFederation(boolean dryRun, Keccak256 hash) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -1523,12 +1539,21 @@ public class BridgeSupport {
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
-        provider.setOldFederation(getActiveFederation());
+        Federation oldFederation = getActiveFederation();
+        provider.setOldFederation(oldFederation);
         provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
         // Clear votes on election
         provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+
+        if (activations.isActive(RSKIP186)) {
+            // Preserve federation change info
+            long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
+            provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+            Script oldFederationP2SHScript = oldFederation.getP2SHScript();
+            provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
+        }
 
         eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
@@ -2068,6 +2093,27 @@ public class BridgeSupport {
     public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
         CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHash);
         return coinbaseInformation != null;
+    }
+
+    public long getActiveFederationCreationBlockHeight() {
+        if (!activations.isActive(RSKIP186)) {
+            return 0L;
+        }
+
+        Long nextFederationCreationBlockHeight = provider.getNextFederationCreationBlockHeight();
+        if (nextFederationCreationBlockHeight != null) {
+            long curBlockHeight = rskExecutionBlock.getNumber();
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+                return nextFederationCreationBlockHeight;
+            }
+        }
+
+        Long activeFederationCreationBlockHeight = provider.getActiveFederationCreationBlockHeight();
+        if (activeFederationCreationBlockHeight != null) {
+            return activeFederationCreationBlockHeight;
+        }
+
+        return 0L;
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {

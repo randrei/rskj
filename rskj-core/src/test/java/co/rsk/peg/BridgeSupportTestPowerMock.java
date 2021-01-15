@@ -1387,6 +1387,7 @@ public class BridgeSupportTestPowerMock {
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
+        when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(null);
 
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
@@ -1418,8 +1419,8 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(any())).thenReturn(mockBtcBlockStore);
 
         PowerMockito.spy(BridgeUtils.class);
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyList(), any(Context.class), any(BridgeConstants.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class));
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants,
@@ -1442,7 +1443,7 @@ public class BridgeSupportTestPowerMock {
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
         PowerMockito.verifyStatic(BridgeUtils.class);
-        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, btcContext, bridgeConstants);
+        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants);
     }
 
     @Test
