@@ -9,7 +9,6 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -17,7 +16,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -191,7 +189,7 @@ public class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo);
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
@@ -207,10 +205,9 @@ public class BridgeSupportReleaseBtcTest {
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
 
         assertEquals(3, logInfo.size());
-
-        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{getBtcDestinationAddress(releaseTx), Coin.COIN.value});
-        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
-        assertEvent(logInfo, 2, BridgeEvents.RELEASE_REQUESTED.getEvent(), new Object[]{releaseTx.getHash().getBytes(), entry.getTransaction().getHash().getBytes()}, new Object[]{Coin.COIN.value});
+        verify(eventLogger,times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger,times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger,times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -238,7 +235,7 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(1, logInfo.size());
 
-        assertEvent(logInfo, 0, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+        verify(eventLogger,times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -269,9 +266,8 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(2, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-
-        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{Coin.ZERO.value, RejectedPegoutReason.LOW_AMOUNT.getValue()});
-        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+        verify(eventLogger,times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(eventLogger,times(1)).logUpdateCollections(any());
     }
 
 
@@ -305,8 +301,8 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(2, logInfo.size());
 
-        assertEvent(logInfo, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{rskTx.getSender().toHexString()}, new Object[]{Coin.COIN.value, RejectedPegoutReason.CALLER_CONTRACT.getValue()});
-        assertEvent(logInfo, 1, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{rskTx.getSender().toHexString()});
+        verify(eventLogger,times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(eventLogger,times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -331,17 +327,6 @@ public class BridgeSupportReleaseBtcTest {
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
-
-    private byte[] getBtcDestinationAddress(Transaction rskTx) {
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        return BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams).getHash160();
-    }
-
-    private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
-        final LogInfo log = logs.get(index);
-        assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
-        assertArrayEquals(event.encodeEventData(params), log.getData());
-    }
 
     private UTXO buildUTXO() {
         return new UTXO(Sha256Hash.wrap(HashUtil.randomHash()), 0, Coin.COIN.multiply(2), 1, false, activeFederation.getP2SHScript());

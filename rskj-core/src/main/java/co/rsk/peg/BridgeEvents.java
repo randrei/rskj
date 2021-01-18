@@ -8,7 +8,7 @@ public enum BridgeEvents {
     LOCK_BTC("lock_btc",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, "btcTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(false, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType(SolidityType.STRING)),
                     new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT))
             }),
@@ -19,14 +19,14 @@ public enum BridgeEvents {
     ),
     ADD_SIGNATURE("add_signature",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(true, "federatorRskAddress", SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "federatorBtcPublicKey", SolidityType.getType(SolidityType.BYTES))
             }
     ),
     RELEASE_BTC("release_btc",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(false, "btcRawTransaction", SolidityType.getType(SolidityType.BYTES))
             }
     ),
@@ -36,13 +36,13 @@ public enum BridgeEvents {
                     new CallTransaction.Param(false, "oldFederationBtcAddress", SolidityType.getType(SolidityType.STRING)),
                     new CallTransaction.Param(false, "newFederationBtcPublicKeys", SolidityType.getType(SolidityType.BYTES)),
                     new CallTransaction.Param(false, "newFederationBtcAddress", SolidityType.getType(SolidityType.STRING)),
-                    new CallTransaction.Param(false, "activationHeight", SolidityType.getType("int256"))
+                    new CallTransaction.Param(false, "activationHeight", SolidityType.getType(SolidityType.INT256))
             }
     ),
     RELEASE_REQUESTED("release_requested",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "rskTxHash", SolidityType.getType("bytes32")),
-                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(true, "rskTxHash", SolidityType.getType(SolidityType.BYTES32)),
+                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT))
             }
     ),

@@ -35,10 +35,12 @@ import java.util.List;
 public abstract class SolidityType {
 
     public static final String BYTES = "bytes";
+    public static final String BYTES32 = "bytes32";
     public static final String STRING = "string";
     public static final String ADDRESS = "address";
     public static final String BOOL = "bool";
     public static final String INT = "int";
+    public static final String INT256 = "int256";
     public static final String UINT = "uint";
 
     protected String name;
