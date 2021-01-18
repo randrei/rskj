@@ -160,11 +160,12 @@ jobs:
           find build/test-results -type f -name "*.xml" \
             -exec cp {} junit/ \;
         when: always
+        
       - store_test_results:
-        path: junit
+          path: junit
 
       - store_artifacts:
-        path: junit
+          path: junit
 
 
 workflows:
