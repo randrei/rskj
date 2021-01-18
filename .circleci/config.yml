@@ -92,6 +92,13 @@ jobs:
     executor: mit-executor
     steps:
       - run:
+        name: Save test results
+        command: |
+          mkdir -p junit/
+          find build/test-results -type f -name "*.xml" \
+            -exec cp {} junit/ \;
+        when: always
+      - run:
           name: Setup
           command: apk add --no-cache curl jq
       - run:
@@ -153,17 +160,8 @@ jobs:
             printf "Running mining integration tests. Follow it on:\n\n    %s\n\n" "$build_url"
             sleep 10 # give CircleCI some time to spin up the job
             wait_for_completion "$build_num"
-      - run:
-        name: Save test results
-        command: |
-          mkdir -p junit/
-          find build/test-results -type f -name "*.xml" \
-            -exec cp {} junit/ \;
-        when: always
-        
       - store_test_results:
           path: junit
-
       - store_artifacts:
           path: junit
 
