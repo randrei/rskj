@@ -93,7 +93,7 @@ jobs:
     steps:
       - run:
         name: Save test results
-        command: "mkdir -p junit/"
+        command: mkdir -p junit/
         when: always
       - run:
           name: Setup
