@@ -823,8 +823,10 @@ public class BridgeSupport {
         }
 
         Long nextFederationCreationBlockHeight = provider.getNextFederationCreationBlockHeight();
-        provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-        provider.clearNextFederationCreationBlockHeight();
+        if (nextFederationCreationBlockHeight != null) {
+            provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+            provider.clearNextFederationCreationBlockHeight();
+        }
     }
 
     /**
