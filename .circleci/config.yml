@@ -93,11 +93,7 @@ jobs:
     steps:
       - run:
         name: Save test results
-        command: |
-          mkdir -p junit/
-          find build/test-results -type f -name "*.xml" \
-            -exec cp {} junit/ \;
-        when: always
+        command: "mkdir -p junit/"
       - run:
           name: Setup
           command: apk add --no-cache curl jq
