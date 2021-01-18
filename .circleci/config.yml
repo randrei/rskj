@@ -92,10 +92,6 @@ jobs:
     executor: mit-executor
     steps:
       - run:
-        name: Save test results
-        command: mkdir -p junit/
-        when: always
-      - run:
           name: Setup
           command: apk add --no-cache curl jq
       - run:
@@ -158,9 +154,9 @@ jobs:
             sleep 10 # give CircleCI some time to spin up the job
             wait_for_completion "$build_num"
       - store_test_results:
-          path: junit
+          path: /tmp
       - store_artifacts:
-          path: junit
+          path: /tmp
 
 
 workflows:
