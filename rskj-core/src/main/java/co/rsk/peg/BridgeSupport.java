@@ -495,7 +495,7 @@ public class BridgeSupport {
         if (BridgeUtils.isContractTx(rskTx)) {
             logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                refundAndEmitEvent(value, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(value, senderAddress.toHexString(), RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
                 throw new Program.OutOfGasException("Contract calling releaseBTC");
@@ -516,13 +516,13 @@ public class BridgeSupport {
         } else {
 
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                refundAndEmitEvent(value, senderAddress, RejectedPegoutReason.LOW_AMOUNT);
+                refundAndEmitRejectEvent(value, senderAddress, RejectedPegoutReason.LOW_AMOUNT);
             }
             logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
         }
     }
 
-    private void refundAndEmitEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+    private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
         String senderAddressStr = senderAddress.toHexString();
         logger.trace("Executing a refund of {} to {}. Reason: {}", value, senderAddressStr, reason);
         rskRepository.transfer(
@@ -530,6 +530,10 @@ public class BridgeSupport {
                 senderAddress,
                 co.rsk.core.Coin.fromBitcoin(value)
         );
+        emitRejectEvent(value, senderAddressStr, reason);
+    }
+
+    private void emitRejectEvent(Coin value, String senderAddressStr, RejectedPegoutReason reason) {
         eventLogger.logReleaseBtcRequestRejected(senderAddressStr, value, reason);
     }
 

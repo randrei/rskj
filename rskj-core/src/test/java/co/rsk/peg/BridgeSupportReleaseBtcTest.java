@@ -289,10 +289,8 @@ public class BridgeSupportReleaseBtcTest {
         rskTx.sign(SENDER.getPrivKeyBytes());
         bridgeSupport.updateCollections(rskTx);
 
-        verify(repository, times(1)).transfer(
-                argThat((a) -> a.equals(PrecompiledContracts.BRIDGE_ADDR)),
-                argThat((a) -> a.equals(new RskAddress(SENDER.getAddress()))),
-                argThat((a) -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.COIN)))
+        verify(repository, never()).transfer(
+                any(), any(), any()
         );
 
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
