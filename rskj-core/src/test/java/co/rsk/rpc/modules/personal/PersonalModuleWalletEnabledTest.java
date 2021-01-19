@@ -2,6 +2,7 @@ package co.rsk.rpc.modules.personal;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -18,7 +19,7 @@ import static org.mockito.Mockito.*;
 
 public class PersonalModuleWalletEnabledTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = DecoderException.class)
     public void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
 
